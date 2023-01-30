@@ -1,2 +1,6 @@
 # Hello World sozin shyaru
 print("Hi Nurgali")
+
+
+def title():
+    print("TITLE")
