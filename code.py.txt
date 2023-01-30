@@ -1,1 +1,2 @@
 # Hello World sozin shyaru
+print("Hi Nurgali")
