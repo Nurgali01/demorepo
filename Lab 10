@@ -1,0 +1,117 @@
+#Shansharov Nurgali lab 10
+sentence = input("Введите предложение: ")
+sentence = sentence.strip()
+words = sentence.split()
+num_words = len(words)
+upper_case = sentence.upper()
+title_case = sentence.capitalize()
+s1 = input("Какое слово надо заменить: ")
+s2 = input("На какое слово надо заменить: ")
+replaced = sentence.replace(s1, s2)
+joined = " - ".join(words)
+is_alpha = sentence.isalpha()
+is_numeric = sentence.isnumeric()
+is_lower = sentence.islower()
+
+print("Исходная строка: ", sentence)
+print("Количество слов: ", num_words)
+print("Верхний регистр: ", upper_case)
+print("Первая заглавная буква: ", title_case)
+print("Замененная строка: ", replaced)
+print("Объединенная строка: ", joined)
+print("Состоит ли строка только из букв: ", is_alpha)
+print("Состоит ли строка только из цифр: ", is_numeric)
+print("Являются ли все символы в строке в нижнем регистре: ", is_lower)
+
+#2.1
+string = input("Введите строку: ")
+unique_chars = sorted(set(string))
+print("Уникальные символы в строке:")
+for char in unique_chars:
+    if char.isalpha():
+        print(char, end=" ")
+
+
+#2.2
+numbers = []
+print("Введите числы в список: ")
+while(True):
+    a = input()
+    if a != "":
+        numbers.extend(map(int, a.split()))
+    else:
+        break
+    
+
+if any(num % 2 != 0 for num in numbers):
+    print("В списке есть хотя бы одно нечетное число")
+if all(num % 2 != 0 for num in numbers):
+    print("Все числа в списке нечетные")
+else:
+    print("Не все числа в списке нечетные")
+
+
+#2.3
+matrix = [    
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+revers = reversed(list(zip(*matrix)))
+result = [list(row) for row in revers]
+print(result)
+
+
+#2.4
+tovar = ['Книга','Ноутбук','Клавиатура','Одежда','Вода','Аксесуары']
+ves = [2,4,2,3,1,2]
+max_ves = 9
+bag = []
+for i in range(len(tovar)):
+    if ves[i] <= max_ves:
+        max_ves -= ves[i]
+        bag.append(tovar[i])
+    else :
+        continue
+
+for i,tovarr in enumerate(bag,1):
+    print(f"{i}: {tovarr}")
+max_ves = tovar[ves.index(max(ves))]
+print(f"Самая тежеля в сумке эта {max(bag)}")
+
+
+#2.5
+matrix_1 = [
+    [1,2,3],
+    [4,5,6],
+    [7,8,9]
+]
+matrix_2 = [
+    [1,2,3],
+    [4,5,6],
+    [7,8,9]
+]
+print("Екы матрицаны косу: ")
+for i, val1 in enumerate(matrix_1):
+    result = []
+    for j, val2 in enumerate(val1):
+        row = matrix_2[i][j]
+        result.append(row + val2)
+    print(result)
+
+print("Екы матрицаны азайту: ")
+for i, val1 in enumerate(matrix_1):
+    result = []
+    for j, val2 in enumerate(val1):
+        row = matrix_2[i][j]
+        result.append(row - val2)
+    print(result)
+
+print("Екы матрицаны кобейту: ")
+for i, row1 in enumerate(matrix_1):
+    result = []
+    for j, val1 in enumerate(row1):
+        val2 = matrix_2[i][j]
+        row2 = [matrix_2[k][j] for k in range(len(matrix_2))]
+        result.append(sum([val1 * val2 for val1, val2 in zip(row1, row2)]))
+    print(result)
