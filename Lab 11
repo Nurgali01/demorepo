@@ -1,0 +1,26 @@
+#Shansharov Nurgali lab 11
+import random
+
+random_san = [random.randint(1,100) for _ in range(10)]
+print(f"Вывод числа рандомно : {random_san}")
+random_sort = sorted(random_san)
+print(f"Сортируем числа : {random_sort}")
+any_int = any(i%2!=0 for i in random_san)
+print("Проверям если ли нечетные числа в сумме ")
+if any_int:
+    print("В сумме есть нечетные числа ")
+else:
+    print("В сумме все числа четные ")
+summa = sum(random_san)
+print(f"Сумма чисел: {summa}")
+print(f"Средная значение {summa/10}")
+for i,j in enumerate(random_sort):
+    if j%2!=0:
+        random_sort[i]+=1
+print(f"Меняем нечетные числа на четные: {random_sort}")
+all_int = all(i%2!=0 for i in random_sort)
+print("Еще раз проверям если ли нечетные числа в сумме ")
+if all_int:
+    print("В сумме есть нечетные числа ")
+else:
+    print("В сумме все числа четные ")  
