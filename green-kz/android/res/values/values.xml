@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Green.kz</string>
+
+    <color name="green">#22C55E</color>
+    <color name="green_dark">#15803D</color>
+    <color name="green_bg">#F0FDF4</color>
+
+    <!-- Ашылу экраны (splash) ашық жасыл фонда иконкамен көрінеді -->
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/green_bg</item>
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorPrimaryDark">@color/green_dark</item>
+        <item name="android:colorAccent">@color/green_dark</item>
+    </style>
+</resources>
