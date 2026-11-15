@@ -28,7 +28,15 @@
     eyeOff: '<svg viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6C3.9 8.4 2 12 2 12s4 7 10 7c1.6 0 3-.4 4.3-1"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-2.9-1.2l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003 15H3a2 2 0 110-4h.1a1.7 1.7 0 001.2-2.9l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 009 4.6V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4z"/></svg>',
-    logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>'
+    logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+    idcard: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><circle cx="8" cy="11" r="2"/><path d="M5 16c.5-1.4 1.6-2 3-2s2.5.6 3 2M14 10h5M14 14h4"/></svg>',
+    military: '<svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M12 8.2l1.1 2.3 2.5.3-1.8 1.8.4 2.5-2.2-1.2-2.2 1.2.4-2.5-1.8-1.8 2.5-.3z"/></svg>',
+    pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+    more: '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg>',
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>',
+    key: '<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M13.5 9.5l2 2"/></svg>',
+    finger: '<svg viewBox="0 0 24 24"><path d="M6.3 6.6A7.6 7.6 0 0119.6 12v1.2"/><path d="M4.4 12c0-1.2.3-2.4.8-3.4"/><path d="M4.6 15.5c.3 1 .4 2 .2 3"/><path d="M8 20.2c1-1.9 1.4-3.8 1.4-6.2v-2a2.6 2.6 0 015.2 0v2.2c0 1.8-.2 3.6-.8 5.3"/><path d="M12 12v2.2c0 2.5-.5 4.7-1.5 6.8"/><path d="M7 12a5 5 0 0110 0v2c0 2-.2 4-.8 5.8"/></svg>'
   };
 
   // Басты бет мәзірі (8 сервис). ­ — жұмсақ тасымал: тар экранда ұзын сөз
@@ -60,6 +68,7 @@
   const STORAGE_KEY = "greenkz-state-v1";
   const defaultState = {
     name: "Айгерім",
+    phone: "",        // ұлттық нөмір, 10 сан (+7-сіз), мысалы "7011234567"
     balance: 248500,
     hidden: false,
     loans: [],
@@ -87,6 +96,15 @@
   const $ = (s, r = document) => r.querySelector(s);
   const money = (n) => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ") + " ₸";
   const signed = (n) => (n > 0 ? "+" : "−") + money(Math.abs(n));
+  // Телефон: "7011234567" → "+7 (701) 123 45 67"; fmtNational — теріліп жатқан жартылай нөмір үшін
+  const fmtNational = (d) => {
+    let out = d.length ? "(" + d.slice(0, 3) : "";
+    if (d.length >= 3) out += ") " + d.slice(3, 6);
+    if (d.length >= 6) out += " " + d.slice(6, 8);
+    if (d.length >= 8) out += " " + d.slice(8, 10);
+    return out.trim();
+  };
+  const fmtPhone = (d) => "+7 " + fmtNational(d);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function toast(msg) {
@@ -345,17 +363,42 @@
         </div>`;
     },
 
+    gov() {
+      return `
+        <section class="panel docs-head">
+          <div class="docs-title"><span class="ic">${I.gov}</span>
+            <div><b>Цифрлық құжаттар</b><small id="docsCount">Жүктелуде…</small></div></div>
+          <p class="note">Құжаттарыңыздың PDF нұсқасын жүктеп қойыңыз, сонда оларды кез келген уақытта осы жерден аша аласыз. Файлдар тек осы телефонда сақталады, ешқайда жіберілмейді.</p>
+        </section>
+        <section class="list" id="docList"><div class="empty" style="padding:26px 10px"><div class="spinner"></div></div></section>`;
+    },
+
     profile() {
+      const bio = GreenLock.bioInfo();
+      const bioText = bio.status === 0 ? (bio.enabled ? "Қосулы" : "Өшірулі")
+        : bio.status === 11 ? "Алдымен телефон параметрлерінде саусақ ізін немесе бетті тіркеңіз"
+        : "Бұл телефонда қолжетімсіз";
+      // Биометрия тек Android қосымшасында бар (браузерде бұл жол көрсетілмейді)
+      const bioRow = bio.status === -1 ? "" : `
+          <button class="row" id="bioToggle"><span class="ic">${I.finger}</span>
+            <span class="txt"><b>Саусақ ізі немесе бет арқылы кіру</b><small>${bioText}</small></span>
+            <span class="switch ${bio.status === 0 && bio.enabled ? "on" : ""}"></span></button>`;
       return `<section class="panel" style="text-align:center">
           <div class="logo" style="width:72px;height:72px;margin:0 auto;border-radius:22px;background:var(--green-soft)">${I.user}</div>
           <h2 style="margin-top:12px">${esc(state.name)}</h2>
-          <p class="note">+7 (7••) ••• •• 21</p>
+          <p class="note" id="profilePhone">${state.phone ? fmtPhone(state.phone) : "Телефон нөмірі көрсетілмеген"}</p>
+        </section>
+        <div class="section-title">Қауіпсіздік</div>
+        <section class="list">
+          <button class="row" id="changePin"><span class="ic">${I.key}</span><span class="txt"><b>Кіру кодын өзгерту</b><small>4 санды код</small></span>${I.chev}</button>${bioRow}
+          <button class="row" id="lockNow"><span class="ic">${I.lock}</span><span class="txt"><b>Қазір құлыптау</b></span>${I.chev}</button>
         </section>
         <div class="section-title">Баптаулар</div>
         <section class="list">
           <button class="row" id="editName"><span class="ic">${I.user}</span><span class="txt"><b>Атымды өзгерту</b></span>${I.chev}</button>
+          <button class="row" id="editPhone"><span class="ic">${I.phone}</span><span class="txt"><b>Телефон нөмірін өзгерту</b><small>${state.phone ? fmtPhone(state.phone) : "Көрсетілмеген"}</small></span>${I.chev}</button>
           <div class="row"><span class="ic">${I.settings}</span><span class="txt"><b>Тіл</b><small>Қазақша</small></span></div>
-          <button class="row" id="resetDemo"><span class="ic">${I.logout}</span><span class="txt"><b>Демо деректерді тазалау</b></span>${I.chev}</button>
+          <button class="row" id="resetDemo"><span class="ic">${I.logout}</span><span class="txt"><b>Демо деректерді тазалау</b><small>Баланс пен тарих бастапқы күйге келеді. Құжаттар өшірілмейді.</small></span>${I.chev}</button>
         </section>`;
     },
 
@@ -363,7 +406,114 @@
       return `<div class="empty"><div class="big-ic">🌱</div><b>Жақында іске қосылады</b><p class="note">Бұл сервис әзірленуде.</p></div>`;
     }
   };
-  ["travel", "gov", "ads", "guide"].forEach((k) => (SCREENS[k] = SCREENS.soon));
+  ["travel", "ads", "guide"].forEach((k) => (SCREENS[k] = SCREENS.soon));
+
+  // ---------- Мемлекеттік қызметтер: цифрлық құжаттар (PDF) ----------
+  const DOCS = [
+    { id: "id", name: "Жеке куәлік", hint: "Удостоверение", icon: "idcard" },
+    { id: "license", name: "Жүргізуші куәлігі", hint: "Права", icon: "car" },
+    { id: "diploma", name: "Диплом", hint: "Білім туралы құжат", icon: "edu" },
+    { id: "military", name: "Әскери билет", hint: "Военный билет", icon: "military" },
+    { id: "address", name: "Мекенжай анықтамасы", hint: "Тіркеу (прописка)", icon: "pin" }
+  ];
+  const docById = (id) => DOCS.find((d) => d.id === id);
+  const fmtSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " МБ" : Math.max(1, Math.round(n / 1024)) + " КБ");
+  const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU");
+  let docMeta = {};        // { id: {name, size, addedAt} } — қоймадан соңғы оқылған күй
+  let pendingDocId = null; // қазір файл таңдалып жатқан құжат
+
+  const docRow = (d) => {
+    const m = docMeta[d.id];
+    const sub = m ? `PDF · ${fmtSize(m.size)} · ${fmtDate(m.addedAt)}` : `${d.hint} · жүктелмеген`;
+    return `<div class="row doc ${m ? "has" : ""}">
+      <button class="doc-main" data-doc="${d.id}">
+        <span class="ic">${I[d.icon]}</span>
+        <span class="txt"><b>${d.name}</b><small>${sub}</small></span>
+      </button>
+      <button class="doc-act" data-doc-act="${d.id}" aria-label="${d.name}: ${m ? "әрекеттер" : "PDF жүктеу"}">${m ? I.more : I.plus}</button>
+    </div>`;
+  };
+
+  async function refreshDocs() {
+    let list;
+    try {
+      list = await GreenDocs.store.list();
+    } catch (e) {
+      if (current === "gov" && $("#docList")) {
+        $("#docList").innerHTML = '<div class="empty"><div class="big-ic">⚠️</div><b>Құжаттар қоймасын ашу мүмкін болмады</b></div>';
+        $("#docsCount").textContent = "Қолжетімсіз";
+      }
+      return;
+    }
+    docMeta = {};
+    list.forEach((m) => { docMeta[m.id] = m; });
+    if (current !== "gov" || !$("#docList")) return; // пайдаланушы басқа экранға өтіп кетті
+    $("#docList").innerHTML = DOCS.map(docRow).join("");
+    $("#docsCount").textContent = `${DOCS.filter((d) => docMeta[d.id]).length} / ${DOCS.length} құжат жүктелген`;
+  }
+
+  // Файл таңдау терезесін ашады (батырма басылған сәтте шақырылуы керек)
+  function pickDoc(id) {
+    pendingDocId = id;
+    const input = $("#docFile");
+    input.value = "";
+    GreenLock.noteFilePicker();
+    input.click();
+  }
+
+  async function onDocFile(file) {
+    const d = docById(pendingDocId);
+    pendingDocId = null;
+    if (!d || !file) return;
+    let err;
+    try { err = await GreenDocs.check(file); } catch (e) { err = "read"; }
+    if (err) {
+      return toast({
+        big: "Файл тым үлкен (ең көбі 25 МБ)",
+        notpdf: "Тек PDF файлын таңдаңыз",
+        read: "Файлды оқу мүмкін болмады"
+      }[err] || "Файл таңдалмады");
+    }
+    toast("Сақталуда…");
+    try {
+      await GreenDocs.store.put(d.id, file);
+    } catch (e) {
+      return toast("Сақтау мүмкін болмады. Жадта орын жеткіліксіз болуы мүмкін.");
+    }
+    toast(`«${d.name}» сақталды`);
+    refreshDocs();
+  }
+  $("#docFile").addEventListener("change", (e) => onDocFile(e.target.files && e.target.files[0]));
+
+  function docActions(d) {
+    const m = docMeta[d.id];
+    if (!m) return;
+    openSheet(`<h2>${d.name}</h2>
+      <p class="note" style="margin:-6px 0 4px">${esc(m.name)} · ${fmtSize(m.size)} · ${fmtDate(m.addedAt)}</p>
+      <button class="btn" id="dOpen">Ашу</button>
+      <button class="btn ghost" id="dReplace">Басқа PDF-пен ауыстыру</button>
+      <button class="btn danger" id="dDelete">Өшіру</button>`, (s) => {
+      $("#dOpen", s).addEventListener("click", () => { closeSheet(); GreenDocs.viewer.open(d.id, d.name); });
+      $("#dReplace", s).addEventListener("click", () => { closeSheet(); pickDoc(d.id); });
+      $("#dDelete", s).addEventListener("click", () => {
+        s.innerHTML = `<div class="grab"></div><h2>«${d.name}» өшірілсін бе?</h2>
+          <p class="note" style="margin-top:0">Файл осы қосымшадан біржола өшіріледі. Телефондағы түпнұсқа файл орнында қалады.</p>
+          <button class="btn danger" id="dYes">Иә, өшіру</button>
+          <button class="btn ghost" id="dNo">Болдырмау</button>`;
+        $("#dNo", s).addEventListener("click", closeSheet);
+        $("#dYes", s).addEventListener("click", async () => {
+          closeSheet();
+          try {
+            await GreenDocs.store.remove(d.id);
+            toast(`«${d.name}» өшірілді`);
+          } catch (e) {
+            toast("Өшіру мүмкін болмады");
+          }
+          refreshDocs();
+        });
+      });
+    });
+  }
 
   // ---------- Экраннан кейінгі логика ----------
   function bindTopUp() {
@@ -573,9 +723,75 @@
           });
         });
       });
-      $("#resetDemo").addEventListener("click", () => {
-        state = JSON.parse(JSON.stringify(defaultState)); save(); toast("Деректер тазаланды"); go("home", false);
+      $("#editPhone").addEventListener("click", () => {
+        openSheet(`<h2>Телефон нөмірі</h2>
+          <label class="phone-field"><span>+7</span>
+            <input id="ph" type="tel" inputmode="numeric" autocomplete="off" maxlength="15" placeholder="(7__) ___ __ __" value="${fmtNational(state.phone || "")}"></label>
+          <p class="note" style="margin:0 0 4px">Нөмір тек осы қосымшада сақталады. Демо нұсқада SMS арқылы растау жоқ.</p>
+          <button class="btn" id="phOk">Сақтау</button>`, (s) => {
+          const inp = $("#ph", s);
+          let prev = state.phone || "";
+          inp.addEventListener("input", (e) => {
+            let d = inp.value.replace(/\D/g, "").slice(0, 10);
+            // Бөлгішті (жақша, бос орын) өшіргенде сан өзгермейді — онда соңғы санды өшіреміз
+            if (e.inputType && e.inputType.indexOf("delete") === 0 && d === prev) d = d.slice(0, -1);
+            prev = d;
+            inp.value = fmtNational(d);
+          });
+          // Қойылған (paste) нөмір: "+7 701 ..." немесе "8 701 ..." → ел кодын алып тастаймыз
+          inp.addEventListener("paste", (e) => {
+            const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+            let d = text.replace(/\D/g, "");
+            if (d.length === 11 && (d[0] === "7" || d[0] === "8")) d = d.slice(1);
+            e.preventDefault();
+            prev = d.slice(0, 10);
+            inp.value = fmtNational(prev);
+          });
+          $("#phOk", s).addEventListener("click", () => {
+            const d = inp.value.replace(/\D/g, "");
+            if (d.length !== 10 || d[0] !== "7") return toast("Нөмірді толық енгізіңіз: +7 (7XX) XXX XX XX");
+            state.phone = d;
+            save();
+            closeSheet();
+            toast("Телефон нөмірі өзгертілді");
+            if (current === "profile") go("profile", false);
+          });
+        });
       });
+      $("#resetDemo").addEventListener("click", () => {
+        // Профиль деректері (аты, телефон) сақталады; баланс, тарих, кредиттер бастапқы күйге келеді
+        const keep = { name: state.name, phone: state.phone };
+        state = Object.assign(JSON.parse(JSON.stringify(defaultState)), keep);
+        save(); toast("Деректер тазаланды"); go("home", false);
+      });
+      $("#changePin").addEventListener("click", () => GreenLock.changePin());
+      $("#lockNow").addEventListener("click", () => GreenLock.lock());
+      const bioBtn = $("#bioToggle");
+      if (bioBtn) {
+        bioBtn.addEventListener("click", () => {
+          const b = GreenLock.bioInfo();
+          if (b.status !== 0) {
+            return toast(b.status === 11
+              ? "Алдымен телефон параметрлерінде саусақ ізін немесе бетті тіркеңіз"
+              : "Бұл телефонда биометрия қолжетімсіз");
+          }
+          // Қосу үшін саусақ ізімен/бетпен растау керек; өшіру бірден орындалады
+          GreenLock.setBio(!b.enabled).then(() => { if (current === "profile") go("profile", false); });
+        });
+      }
+    },
+
+    gov() {
+      $("#docList").addEventListener("click", (e) => {
+        const main = e.target.closest("[data-doc]");
+        const act = e.target.closest("[data-doc-act]");
+        const d = docById((main && main.dataset.doc) || (act && act.dataset.docAct));
+        if (!d) return;
+        if (!docMeta[d.id]) return pickDoc(d.id);          // жүктелмеген → файл таңдау
+        if (main) GreenDocs.viewer.open(d.id, d.name);     // жүктелген → бірден ашу
+        else docActions(d);                                // ⋮ → ашу / ауыстыру / өшіру
+      });
+      refreshDocs();
     }
   };
 
@@ -591,13 +807,34 @@
   };
   if (params.has("sat")) window.greenSetInset(params.get("sat"));
 
-  // Телефонның «Артқа» батырмасы: алдымен терезені жабады, сосын алдыңғы экранға
-  // қайтады. Басты бетте false қайтарады — сонда Android қосымшадан шығады.
+  // Телефонның «Артқа» батырмасы: алдымен ең үстіңгі қабатты жабады (құлып экранындағы
+  // панель → төменгі терезе → PDF терезесі), сосын алдыңғы экранға қайтады.
+  // false қайтарса, Android қосымшадан шығады (басты бетте немесе құлып тұрғанда).
   window.greenBack = () => {
+    if (GreenLock.isOpen()) return GreenLock.back();
     if (!$("#sheetBackdrop").hidden) { closeSheet(); return true; }
+    if (GreenDocs.viewer.isOpen()) { GreenDocs.viewer.close(); return true; }
     if (current !== "home") { back(); return true; }
     return false;
   };
 
-  go("home", false);
+  // «Кодты ұмыттым»: қосымшадағы барлық дерек өшіріледі (баланс, тарих, құжаттар)
+  let booted = false;
+  async function wipeAll() {
+    state = JSON.parse(JSON.stringify(defaultState));
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+    try { await GreenDocs.store.clear(); } catch (e) { /* ignore */ }
+    docMeta = {};
+    closeSheet();
+    GreenDocs.viewer.close();
+    stack.length = 0;
+    if (booted) go("home", false);
+  }
+
+  // Іске қосылу: алдымен кіру коды (немесе биометрия), содан кейін ғана басты бет салынады
+  GreenLock.start({
+    toast,
+    onWipe: wipeAll,
+    onUnlock() { booted = true; go("home", false); }
+  });
 })();

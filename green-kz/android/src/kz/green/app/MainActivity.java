@@ -9,11 +9,15 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+
+import org.json.JSONObject;
 
 import java.util.Locale;
 
@@ -23,16 +27,21 @@ import java.util.Locale;
  * - Жасыл тақырып мөлдір статус-бардың астына дейін созылады (CSS --sat айнымалысы).
  * - Экрандағы пернетақта ашылғанда WebView кішірейеді, енгізу өрістері жабылмайды.
  * - «Артқа» батырмасы алдымен қосымша ішіндегі терезе/экранды жабады.
+ * - PDF таңдау: бет ішіндегі input type=file жүйелік файл таңдау терезесін ашады.
+ * - Биометрия: бет window.GreenNative арқылы жүйелік саусақ ізі / бет тану терезесін сұрайды.
  */
 public class MainActivity extends Activity {
 
     private static final String START_URL = "file:///android_asset/www/index.html";
     private static final int BG = 0xFFF0FDF4;
+    private static final int REQ_FILE = 1001;
 
     private FrameLayout root;
     private WebView web;
     private boolean pageReady = false;
     private float topInsetCss = 0f;
+    private ValueCallback<Uri[]> fileCallback;
+    private String[] pendingBio; // {тақырып, түсіндірме, бас тарту батырмасы} — терезе фокус алғанша күтеді
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,10 +65,14 @@ public class MainActivity extends Activity {
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true); // localStorage: баланс, тарих, кредиттер сақталады
+        s.setDomStorageEnabled(true); // localStorage / IndexedDB: баланс, код хэші, құжаттар
         if (s.getTextZoom() > 115) {
             s.setTextZoom(115); // өте үлкен жүйелік қаріп макетті бұзбасын
         }
+
+        // Бетке тек APK ішіндегі өз файлдарымыз жүктеледі (сыртқы сілтемелер браузерде
+        // ашылады), сондықтан көпір бөгде сайттарға қолжетімсіз.
+        web.addJavascriptInterface(new Bridge(), "GreenNative");
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -79,6 +92,34 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
                 pushInset();
+            }
+        });
+
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (fileCallback != null) {
+                    fileCallback.onReceiveValue(null);
+                }
+                fileCallback = callback;
+                // input accept="application/pdf" → тек PDF файлдар көрсетіледі
+                String type = "*/*";
+                String[] accept = params.getAcceptTypes();
+                if (accept != null && accept.length > 0 && accept[0] != null && accept[0].indexOf('/') > 0) {
+                    type = accept[0];
+                }
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType(type);
+                try {
+                    startActivityForResult(intent, REQ_FILE);
+                } catch (Exception e) {
+                    // файл таңдайтын қосымша табылмады
+                    fileCallback = null;
+                    callback.onReceiveValue(null);
+                }
+                return true;
             }
         });
 
@@ -113,14 +154,87 @@ public class MainActivity extends Activity {
     }
 
     private void pushInset() {
-        if (pageReady) {
-            web.evaluateJavascript("window.greenSetInset && window.greenSetInset(" + fmt(topInsetCss) + ")", null);
+        js("window.greenSetInset && window.greenSetInset(" + fmt(topInsetCss) + ")");
+    }
+
+    /** Бет дайын болса, JS кодын орындайды (тек UI ағынынан шақырылады). */
+    private void js(String code) {
+        if (pageReady && web != null) {
+            web.evaluateJavascript(code, null);
         }
     }
 
     private static String fmt(float v) {
         return String.format(Locale.US, "%.1f", v);
     }
+
+    // ---------- Файл таңдау нәтижесі ----------
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQ_FILE) {
+            if (fileCallback != null) {
+                fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+                fileCallback = null;
+            }
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    // ---------- Биометрия көпірі (JS: window.GreenNative) ----------
+
+    /** WebView осы кластың @JavascriptInterface әдістерін JS-тен шақырады, сондықтан ол ашық (public). */
+    public final class Bridge {
+        /** 0 — дайын; 11 — саусақ ізі/бет тіркелмеген; -1 — қолдау жоқ; басқасы — қолжетімсіз. */
+        @JavascriptInterface
+        public int bioStatus() {
+            try {
+                return BiometricHelper.status(MainActivity.this);
+            } catch (Throwable t) {
+                return -1;
+            }
+        }
+
+        /** Жүйелік биометрия терезесін көрсетеді; нәтиже window.greenBioResult(ok, code, msg) арқылы келеді. */
+        @JavascriptInterface
+        public void bioAuth(final String title, final String subtitle, final String negative) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    pendingBio = new String[] {title, subtitle, negative};
+                    if (hasWindowFocus()) {
+                        startPendingBio();
+                    }
+                }
+            });
+        }
+    }
+
+    private void startPendingBio() {
+        final String[] a = pendingBio;
+        pendingBio = null;
+        if (a == null) {
+            return;
+        }
+        BiometricHelper.authenticate(this, a[0], a[1], a[2], new BiometricHelper.Result() {
+            @Override
+            public void done(boolean ok, int code, String message) {
+                js("window.greenBioResult && window.greenBioResult(" + ok + "," + code + ","
+                        + JSONObject.quote(message == null ? "" : message) + ")");
+            }
+        });
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && pendingBio != null) {
+            startPendingBio();
+        }
+    }
+
+    // ---------- «Артқа» және өмірлік цикл ----------
 
     @Override
     public void onBackPressed() {
@@ -143,10 +257,14 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        // Қосымшаға қайта кіру: 10 секундтан көп өтсе, бет кіру кодын сұрайды
+        js("window.greenAppShown && window.greenAppShown()");
     }
 
     @Override
     protected void onPause() {
+        // Қосымшадан шығу уақытын бетке хабарлаймыз
+        js("window.greenAppHidden && window.greenAppHidden()");
         web.onPause();
         super.onPause();
     }

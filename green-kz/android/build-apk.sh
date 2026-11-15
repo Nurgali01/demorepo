@@ -20,11 +20,11 @@ KS_PASS="${KS_PASS:-greenkz-demo}"
 B="$HERE/build"
 
 rm -rf "$B"
-mkdir -p "$B/assets/www" "$B/classes"
+mkdir -p "$B/assets/www" "$B/classes" "$B/stubs"
 
 echo "1/5 Веб-файлдарды көшіру"
-cp "$WEB/index.html" "$WEB/styles.css" "$WEB/app.js" "$WEB/manifest.webmanifest" "$B/assets/www/"
-cp -r "$WEB/icons" "$B/assets/www/"
+cp "$WEB"/index.html "$WEB"/*.css "$WEB"/*.js "$WEB/manifest.webmanifest" "$B/assets/www/"
+cp -r "$WEB/icons" "$WEB/vendor" "$B/assets/www/"
 
 echo "2/5 Ресурстар мен манифест (aapt2)"
 aapt2 compile --dir "$HERE/res" -o "$B/res.zip"
@@ -32,8 +32,13 @@ aapt2 link -o "$B/base.apk" -I "$ANDROID_JAR" \
   --manifest "$HERE/AndroidManifest.xml" -A "$B/assets" "$B/res.zip"
 
 echo "3/5 Java → classes.dex"
-find "$HERE/src" -name '*.java' > "$B/sources.txt"
+# stubs/ — API 23 android.jar ішінде жоқ жаңа API-лердің (BiometricPrompt) сигнатуралары.
+# Олар тек компиляцияға керек: classes.dex ішіне кірмейді, телефонда нағыз кластар қолданылады.
+find "$HERE/stubs" -name '*.java' > "$B/stubs.txt"
 javac -source 8 -target 8 -bootclasspath "$ANDROID_JAR" -Xlint:-options \
+  -d "$B/stubs" @"$B/stubs.txt"
+find "$HERE/src" -name '*.java' > "$B/sources.txt"
+javac -source 8 -target 8 -bootclasspath "$ANDROID_JAR" -classpath "$B/stubs" -Xlint:-options \
   -d "$B/classes" @"$B/sources.txt"
 dalvik-exchange --dex --min-sdk-version=23 --output="$B/classes.dex" "$B/classes"
 (cd "$B" && zip -q base.apk classes.dex)

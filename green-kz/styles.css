@@ -330,7 +330,10 @@ table.schedule { width: 100%; border-collapse: collapse; font-size: 13px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .toast {
-  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 50;
+  /* Жоғарыда тұрады: төменгі терезені (sheet) және пернетақтаны жаппайды */
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+  top: calc(80px + max(var(--sat, 0px), env(safe-area-inset-top, 0px)));
+  width: max-content; text-align: center;
   max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px;
   background: var(--text); color: #fff; font-size: 14px; font-weight: 500;
   box-shadow: 0 8px 24px rgba(0,0,0,.2);
@@ -338,3 +341,175 @@ table.schedule { width: 100%; border-collapse: collapse; font-size: 13px; }
 
 .empty { text-align: center; padding: 40px 10px; color: var(--muted); }
 .empty .big-ic { margin-bottom: 10px; }
+
+.btn.danger { background: #fee2e2; color: #b91c1c; }
+.icon-btn:disabled { opacity: .45; }
+
+/* ---------- Мемлекеттік қызметтер: цифрлық құжаттар ---------- */
+.docs-title { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.docs-title .ic {
+  width: 46px; height: 46px; flex: 0 0 46px; border-radius: 14px;
+  display: grid; place-items: center; background: var(--green-soft); color: var(--green-dark);
+}
+.docs-title b { display: block; font-size: 17px; }
+.docs-title small { color: var(--muted); font-size: 13px; }
+.docs-head .note { margin-top: 0; font-size: 13px; }
+
+.row.doc { padding: 0; gap: 0; }
+.doc-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px;
+  padding: 14px 4px 14px 16px; text-align: left;
+}
+.doc-act {
+  flex: 0 0 54px; align-self: stretch;
+  display: grid; place-items: center; color: var(--green-dark);
+}
+.doc-main:active, .doc-act:active { background: var(--green-bg); }
+.doc .ic { position: relative; }
+.doc:not(.has) .ic { background: #eef3f0; color: #7c9486; }
+/* Жүктелген құжаттың белгісі */
+.doc.has .ic::after {
+  content: ""; position: absolute; right: -5px; bottom: -5px;
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff;
+  background: var(--green-dark) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 11px no-repeat;
+}
+
+/* Ауыстырғыш (биометрияны қосу/өшіру) */
+.switch {
+  flex: 0 0 46px; width: 46px; height: 28px; border-radius: 14px;
+  position: relative; background: #cfe0d5; transition: background .15s;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .15s;
+}
+.switch.on { background: var(--green-dark); }
+.switch.on::after { left: 21px; }
+
+/* ---------- PDF қарау терезесі ---------- */
+.viewer {
+  position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 30;
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; background: #dcebe1;
+}
+.viewer-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  padding-top: calc(14px + max(var(--sat, 0px), env(safe-area-inset-top, 0px)));
+  background: linear-gradient(135deg, var(--green-light), var(--green)); color: #fff;
+}
+.viewer-bar h2 {
+  flex: 1; min-width: 0; font-size: 18px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.viewer-body { position: relative; flex: 1; min-height: 0; display: flex; }
+.viewer-scroll {
+  position: relative; flex: 1; min-width: 0; overflow: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.viewer-pages { box-sizing: border-box; width: 100%; padding: 12px 12px 4px; }
+.pdf-page {
+  margin-bottom: 12px; border-radius: 6px; overflow: hidden;
+  background: #fff; box-shadow: 0 2px 10px rgba(15, 42, 26, .18);
+}
+.pdf-page canvas { display: block; width: 100%; height: 100%; }
+.viewer-status {
+  position: absolute; inset: 0; padding: 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: #dcebe1; text-align: center; color: var(--text);
+}
+.viewer-status p { font-size: 15px; margin-bottom: 8px; }
+.viewer-status form { width: 100%; max-width: 320px; }
+.viewer-status .btn { max-width: 320px; margin-top: 10px; }
+.viewer-count {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(15, 42, 26, .78); color: #fff; font-size: 13px; font-weight: 600;
+  pointer-events: none;
+}
+
+/* ---------- Кіру құлпы ---------- */
+.lock {
+  position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 100;
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; overflow-y: auto;
+  background: var(--green-bg);
+}
+.lock-hero {
+  position: relative; flex: 0 0 auto; text-align: center; color: #fff;
+  padding: calc(clamp(18px, 4vh, 36px) + max(var(--sat, 0px), env(safe-area-inset-top, 0px))) 16px clamp(18px, 3.4vh, 30px);
+  border-radius: 0 0 32px 32px;
+  background: linear-gradient(135deg, var(--green-light), var(--green));
+}
+.lock-logo { width: 60px; height: 60px; border-radius: 19px; margin: 0 auto 10px; display: grid; }
+.lock-logo svg { width: 36px; height: 36px; }
+.lock-brand { font-size: 28px; font-weight: 800; letter-spacing: -.4px; }
+.lock-brand span { opacity: .85; font-weight: 600; }
+.lock-close {
+  position: absolute; left: 16px;
+  top: calc(14px + max(var(--sat, 0px), env(safe-area-inset-top, 0px)));
+}
+.lock-body {
+  flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+  padding: 10px 16px max(14px, env(safe-area-inset-bottom));
+}
+.lock-mid { text-align: center; }
+.lock-title { font-size: 18px; font-weight: 700; }
+.lock-dots { display: flex; justify-content: center; gap: 18px; margin-top: 16px; }
+.lock-dots i {
+  width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--green-dark);
+  transition: background .12s, transform .12s;
+}
+.lock-dots i.on { background: var(--green-dark); transform: scale(1.12); }
+.lock-dots.err { animation: lock-shake .38s; }
+.lock-dots.err i { border-color: var(--danger); background: var(--danger); }
+@keyframes lock-shake {
+  20% { transform: translateX(-9px); } 40% { transform: translateX(9px); }
+  60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
+}
+.lock-msg { min-height: 20px; margin-top: 12px; padding: 0 12px; font-size: 14px; color: var(--muted); }
+.lock-msg.err { color: var(--danger); }
+.lock-pad {
+  --key: clamp(56px, 9.2vh, 76px);
+  display: grid; grid-template-columns: repeat(3, var(--key)); gap: clamp(8px, 1.8vh, 16px) 28px;
+}
+.key {
+  width: var(--key); height: var(--key); border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; color: var(--text); box-shadow: var(--shadow);
+  font-size: 27px; font-weight: 600;
+}
+.key:active { background: var(--green-soft); transform: scale(.94); }
+.key-ghost { background: transparent; box-shadow: none; color: var(--green-dark); }
+.key-ghost svg { width: 30px; height: 30px; stroke-width: 1.8; }
+.key.off { visibility: hidden; }
+.lock-forgot { padding: 10px 16px; color: var(--green-dark); font-size: 14px; font-weight: 600; }
+.lock-panel {
+  width: 100%; max-width: 380px; padding: 22px 18px; border-radius: var(--radius);
+  background: var(--card); box-shadow: var(--shadow); text-align: center;
+}
+.lock-panel h2 { margin: 6px 0 8px; font-size: 19px; }
+.lock-panel p { font-size: 14px; line-height: 1.45; color: var(--muted); }
+.lock-panel .lock-msg { margin-top: 8px; min-height: 0; }
+.docs-head + .list { margin-top: 14px; }
+
+/* Телефон нөмірі өрісі: тұрақты +7 префиксі бар */
+.phone-field {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 0 14px;
+  border-radius: 14px; border: 1.5px solid var(--line); background: var(--green-bg);
+}
+.phone-field:focus-within { border-color: var(--green); }
+.phone-field span { font-weight: 700; font-size: 17px; }
+.phone-field input {
+  flex: 1; min-width: 0; padding: 14px 0; border: 0; outline: 0; background: transparent;
+  font-size: 17px; letter-spacing: .3px;
+}
+
+.lock-badge {
+  width: 76px; height: 76px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  background: var(--green-soft); color: var(--green-dark);
+}
+.lock-badge svg { width: 40px; height: 40px; stroke-width: 1.7; }
+.lock-panel .big-ic { line-height: 1.1; }
