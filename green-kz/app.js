@@ -39,26 +39,27 @@
     finger: '<svg viewBox="0 0 24 24"><path d="M6.3 6.6A7.6 7.6 0 0119.6 12v1.2"/><path d="M4.4 12c0-1.2.3-2.4.8-3.4"/><path d="M4.6 15.5c.3 1 .4 2 .2 3"/><path d="M8 20.2c1-1.9 1.4-3.8 1.4-6.2v-2a2.6 2.6 0 015.2 0v2.2c0 1.8-.2 3.6-.8 5.3"/><path d="M12 12v2.2c0 2.5-.5 4.7-1.5 6.8"/><path d="M7 12a5 5 0 0110 0v2c0 2-.2 4-.8 5.8"/></svg>'
   };
 
-  // Басты бет мәзірі (8 сервис). ­ — жұмсақ тасымал: тар экранда ұзын сөз
-  // буын бойынша бөлінеді («Хабар-ландыру»), әйтпесе бір жолда тұрады.
+  // Басты бет мәзірі (8 сервис). \u00AD — жұмсақ тасымал: тар экранда ұзын сөз
+  // буын бойынша бөлінеді («Аударым-дар»), әйтпесе бір жолда тұрады.
   const SERVICES = [
     { id: "bank", name: "Менің банкім", icon: "bank" },
     { id: "payments", name: "Төлемдер", icon: "pay" },
-    { id: "transfers", name: "Аударым­дар", icon: "transfer" },
+    { id: "transfers", name: "Аударым\u00ADдар", icon: "transfer" },
     { id: "credit", name: "Кредит", icon: "credit" },
     { id: "shop", name: "Дүкен", icon: "shop" },
     { id: "travel", name: "Travel", icon: "travel" },
     { id: "gov", name: "Мем. қызметтер", icon: "gov" },
-    { id: "ads", name: "Хабар­ландыру", icon: "ads" }
+    { id: "guide", name: "Green Гид", icon: "guide" }
   ];
+  // «Барлығы» бетінде қосымша көрсетілетіндер («Хабарландыру» әлі жасалмаған)
   const EXTRA_SERVICES = [
-    { id: "guide", name: "Green Гид", icon: "guide" },
-    { id: "deposit", name: "Депозит", icon: "deposit" }
+    { id: "deposit", name: "Депозит", icon: "deposit" },
+    { id: "ads", name: "Хабар\u00ADландыру", icon: "ads" }
   ];
 
   const TITLES = {
     bank: "Менің банкім", payments: "Төлемдер", transfers: "Аударымдар",
-    credit: "Green Кредит", shop: "Green Дүкен", travel: "Travel",
+    credit: "Green Кредит", shop: "Green Дүкен", travel: "Green Travel",
     gov: "Мемлекеттік қызметтер", ads: "Хабарландырулар", guide: "Green Гид",
     deposit: "Депозит", messages: "Хабарламалар", qr: "QR төлем",
     services: "Барлық сервистер", profile: "Профиль"
@@ -72,6 +73,7 @@
     balance: 248500,
     hidden: false,
     loans: [],
+    tickets: [],      // Green Travel: сатып алынған әуе билеттері
     history: [
       { title: "Magnum", sub: "Сатып алу", amount: -12450, icon: "shop" },
       { title: "Жалақы", sub: "Кіріс", amount: 350000, icon: "bank" },
@@ -79,14 +81,17 @@
     ]
   };
 
+  // Бастапқы күйдің әрқашан жаңа көшірмесі: сақталған деректе жоқ өрістер (мысалы, жаңа
+  // нұсқада қосылған tickets) defaultState ішіндегі массивтермен ортақ болып қалмауы керек.
+  const freshState = () => JSON.parse(JSON.stringify(defaultState));
   let state = load();
 
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return Object.assign({}, defaultState, JSON.parse(raw));
+      if (raw) return Object.assign(freshState(), JSON.parse(raw));
     } catch (e) { /* localStorage қолжетімсіз */ }
-    return JSON.parse(JSON.stringify(defaultState));
+    return freshState();
   }
   function save() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
@@ -105,6 +110,10 @@
     return out.trim();
   };
   const fmtPhone = (d) => "+7 " + fmtNational(d);
+  // Іздеуге арналған қалып: кіші әріп + қазақ әріптері негізгі кириллицаға («құжат» → «кужат»),
+  // сонда қазақ пернетақтасынсыз терілген сөз де табылады
+  const FOLD = { "ә": "а", "ғ": "г", "қ": "к", "ң": "н", "ө": "о", "ұ": "у", "ү": "у", "һ": "х", "і": "и", "ё": "е" };
+  const fold = (t) => String(t).toLowerCase().replace(/[әғқңөұүһіё]/g, (c) => FOLD[c]);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function toast(msg) {
@@ -398,7 +407,7 @@
           <button class="row" id="editName"><span class="ic">${I.user}</span><span class="txt"><b>Атымды өзгерту</b></span>${I.chev}</button>
           <button class="row" id="editPhone"><span class="ic">${I.phone}</span><span class="txt"><b>Телефон нөмірін өзгерту</b><small>${state.phone ? fmtPhone(state.phone) : "Көрсетілмеген"}</small></span>${I.chev}</button>
           <div class="row"><span class="ic">${I.settings}</span><span class="txt"><b>Тіл</b><small>Қазақша</small></span></div>
-          <button class="row" id="resetDemo"><span class="ic">${I.logout}</span><span class="txt"><b>Демо деректерді тазалау</b><small>Баланс пен тарих бастапқы күйге келеді. Құжаттар өшірілмейді.</small></span>${I.chev}</button>
+          <button class="row" id="resetDemo"><span class="ic">${I.logout}</span><span class="txt"><b>Демо деректерді тазалау</b><small>Баланс, тарих, кредиттер мен билеттер бастапқы күйге келеді. Құжаттар өшірілмейді.</small></span>${I.chev}</button>
         </section>`;
     },
 
@@ -406,7 +415,7 @@
       return `<div class="empty"><div class="big-ic">🌱</div><b>Жақында іске қосылады</b><p class="note">Бұл сервис әзірленуде.</p></div>`;
     }
   };
-  ["travel", "ads", "guide"].forEach((k) => (SCREENS[k] = SCREENS.soon));
+  SCREENS.ads = SCREENS.soon; // travel және guide экрандарын travel.js / guide.js тіркейді
 
   // ---------- Мемлекеттік қызметтер: цифрлық құжаттар (PDF) ----------
   const DOCS = [
@@ -560,7 +569,7 @@
       const all = SERVICES.concat(EXTRA_SERVICES);
       $("#searchInput").addEventListener("input", (e) => {
         const q = e.target.value.trim().toLowerCase();
-        const list = q ? all.filter((s) => s.name.replace(/­/g, "").toLowerCase().includes(q)) : SERVICES;
+        const list = q ? all.filter((s) => s.name.replace(/\u00AD/g, "").toLowerCase().includes(q)) : SERVICES;
         $("#serviceGrid").innerHTML = list.length ? list.map(serviceTile).join("") :
           '<p class="note" style="grid-column:1/-1;text-align:center">Ештеңе табылмады</p>';
       });
@@ -759,9 +768,9 @@
         });
       });
       $("#resetDemo").addEventListener("click", () => {
-        // Профиль деректері (аты, телефон) сақталады; баланс, тарих, кредиттер бастапқы күйге келеді
+        // Профиль деректері (аты, телефон) сақталады; баланс, тарих, кредиттер, билеттер бастапқы күйге келеді
         const keep = { name: state.name, phone: state.phone };
-        state = Object.assign(JSON.parse(JSON.stringify(defaultState)), keep);
+        state = Object.assign(freshState(), keep);
         save(); toast("Деректер тазаланды"); go("home", false);
       });
       $("#changePin").addEventListener("click", () => GreenLock.changePin());
@@ -821,7 +830,7 @@
   // «Кодты ұмыттым»: қосымшадағы барлық дерек өшіріледі (баланс, тарих, құжаттар)
   let booted = false;
   async function wipeAll() {
-    state = JSON.parse(JSON.stringify(defaultState));
+    state = freshState();
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
     try { await GreenDocs.store.clear(); } catch (e) { /* ignore */ }
     docMeta = {};
@@ -830,6 +839,23 @@
     stack.length = 0;
     if (booted) go("home", false);
   }
+
+  // ---------- Модульдер (travel.js, guide.js) ----------
+  // Модуль файлдары app.js-тен бұрын жүктеліп, window.GreenModules тізіміне init функциясын
+  // қосады. Мұнда оларға қосымшаның ішкі құралдары беріледі; модуль өз экрандарын тіркейді.
+  const GreenApp = {
+    $, money, esc, fold, toast, openSheet, closeSheet, go, back, addTx, save,
+    icons: I, screens: SCREENS, after: AFTER, titles: TITLES,
+    get state() { return state; },      // state қайта тағайындалуы мүмкін, сондықтан getter
+    get current() { return current; },
+    setTitle(text) { $("#screenTitle").textContent = text; },
+    // Экрандар тізбегін тазалап, экранды басты беттің үстінен ашады (мысалы, төлемнен кейін)
+    resetTo(screen) { stack.length = 0; stack.push("home"); go(screen, false); }
+  };
+  window.GreenApp = GreenApp;
+  (window.GreenModules || []).forEach((init) => {
+    try { init(GreenApp); } catch (e) { console.error("Модуль іске қосылмады:", e); }
+  });
 
   // Іске қосылу: алдымен кіру коды (немесе биометрия), содан кейін ғана басты бет салынады
   GreenLock.start({
